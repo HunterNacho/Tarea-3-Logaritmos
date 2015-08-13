@@ -96,7 +96,7 @@ public class CellularAutomaton {
 				Thread newThread;
 				newThread = new PartitionThread(partitions[j]);
 				threadList.add(newThread);
-				newThread.run();
+				newThread.start();
 			}
 			while (!threadList.isEmpty()) {
 				Thread thread = threadList.remove(0);
