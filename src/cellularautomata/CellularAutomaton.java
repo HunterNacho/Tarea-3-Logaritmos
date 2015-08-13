@@ -23,8 +23,8 @@ public class CellularAutomaton {
 		@Override
 		public void run() {
 			for (int i = 0; i < indexes.length; i++) {
-				if (i < hash.length && hash[i] != null)
-					computeNextState(hash[i][0], hash[i][1], hash[i][2]);
+				if (indexes[i] != null)
+					computeNextState(indexes[i][0], indexes[i][1], indexes[i][2]);
 			}
 		}
 		
@@ -68,7 +68,7 @@ public class CellularAutomaton {
 	
 	public long runSimulation(int steps, int threads, int partitionType) throws InterruptedException {
 		ArrayList<Thread> threadList = new ArrayList<Thread>();
-		int[][][] partitions = new int[threads][(int) Math.ceil(Math.pow(size, 3) / threads)][3];
+		int[][][] partitions = new int[threads][(int) Math.ceil(Math.pow(size, 3) / threads)][];
 		if (partitionType == QUOTIENT_PARTITION) {
 			for (int j = 0; j < threads; j++) {
 				int lowerBound, upperBound;
@@ -101,6 +101,7 @@ public class CellularAutomaton {
 				Thread thread = threadList.remove(0);
 				thread.join();
 			}
+			oldStates = newStates.clone();
 		}
 		long endTime = System.currentTimeMillis();
 		return endTime - startTime;
