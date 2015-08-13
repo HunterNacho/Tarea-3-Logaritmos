@@ -6,6 +6,7 @@ import java.util.Arrays;
 public class CellularAutomaton {
 	public static int QUOTIENT_PARTITION = 1;
 	public static int MODULO_PARTITION = 2;
+	private boolean[][][] initialStates;
 	private boolean[][][] oldStates;
 	private boolean[][][] newStates;
 	private int[][] hash;
@@ -13,7 +14,6 @@ public class CellularAutomaton {
 	private final int n1 = 6, n2 = 8, n3 = 6, n4 = 11;
 	
 	private class PartitionThread extends Thread {
-		
 		private int[][] indexes;
 
 		public PartitionThread(int[][] indexes) {
@@ -32,7 +32,7 @@ public class CellularAutomaton {
 	
 	public CellularAutomaton(boolean[][][] matrix) {
 		size = matrix.length;
-		oldStates = matrix;
+		initialStates = matrix;
 		hash = new int[size*size*size][3];
 		int index = 0;
 		for (int i = 0; i < size; i++) {
@@ -67,6 +67,7 @@ public class CellularAutomaton {
 	}
 	
 	public long runSimulation(int steps, int threads, int partitionType) throws InterruptedException {
+		oldStates = initialStates.clone();
 		ArrayList<Thread> threadList = new ArrayList<Thread>();
 		int[][][] partitions = new int[threads][(int) Math.ceil(Math.pow(size, 3) / threads)][];
 		if (partitionType == QUOTIENT_PARTITION) {
