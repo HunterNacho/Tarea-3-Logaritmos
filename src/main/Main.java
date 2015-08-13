@@ -1,8 +1,8 @@
 package main;
 
 import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Random;
 
 import cellularautomata.CellularAutomaton;
@@ -11,7 +11,7 @@ public class Main {
 	
 	//CSV header
 	private static final String NUMBER_OF_THREADS = "size,0,1,2,3,4,5";
-	private static final int STEPS = 10;
+	private static final int STEPS = 100;
 	private static BufferedWriter quotResults;
 	private static BufferedWriter modResults;
 	
@@ -20,8 +20,8 @@ public class Main {
 		//unique filename
 		long resFilename = System.currentTimeMillis();
 		
-		modResults = new BufferedWriter(new PrintWriter("modResults"+resFilename+".csv", "UTF-8"));
-		quotResults = new BufferedWriter(new PrintWriter("quotResults"+resFilename+".csv", "UTF-8"));
+		modResults = new BufferedWriter(new FileWriter("modResults"+resFilename+".csv"));
+		quotResults = new BufferedWriter(new FileWriter("quotResults"+resFilename+".csv"));
 		
 		modResults.write(NUMBER_OF_THREADS+"\n");
 		quotResults.write(NUMBER_OF_THREADS+"\n");
@@ -31,8 +31,8 @@ public class Main {
 		for(int m = 5; m <= 24; m++) {
 			
 			//imprimir primera columna de la fila
-			modResults.write(m);
-			quotResults.write(m);
+			modResults.write(Integer.toString(m));
+			quotResults.write(Integer.toString(m));
 			
 			
 			//generar matriz de tamaño m con valores aleatorios
@@ -49,20 +49,17 @@ public class Main {
 			CellularAutomaton cellAut = new CellularAutomaton(matrix);
 			
 			for(int k = 0; k <=5; k++) {
-				//VER SI HAY QUE RESETEAR LA MATRIZ A COMO ESTABA ANTES
 				long resMod = cellAut.runSimulation(STEPS, (int)Math.pow(2, k), CellularAutomaton.MODULO_PARTITION);
 				long resQuot = cellAut.runSimulation(STEPS, (int)Math.pow(2, k), CellularAutomaton.QUOTIENT_PARTITION);
-				modResults.write(","+resMod);
-				quotResults.write(","+resQuot);
+				modResults.write(","+String.valueOf(resMod));
+				quotResults.write(","+Long.toString(resQuot));
 			}
 			modResults.newLine();
 			quotResults.newLine();
 		}
 		
-		
-
-	
-
+		modResults.close();
+		quotResults.close();
 		
 	}
 }

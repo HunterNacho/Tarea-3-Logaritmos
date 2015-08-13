@@ -2,6 +2,7 @@ package cellularautomata;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.Phaser;
 
 public class CellularAutomaton {
 	public static int QUOTIENT_PARTITION = 1;
@@ -12,24 +13,32 @@ public class CellularAutomaton {
 	private int[][] hash;
 	private int size;
 	private final int n1 = 6, n2 = 8, n3 = 6, n4 = 11;
-	
+
 	private class PartitionThread extends Thread {
 		private int[][] indexes;
-
-		public PartitionThread(int[][] indexes) {
+		private Phaser coordinator;
+		private int iters;
+		public PartitionThread(int[][] indexes, Phaser phaser, int iters) {
 			this.indexes = indexes;
+			coordinator = phaser;
+			this.iters = iters;
+			coordinator.register();
 		}
-		
+
 		@Override
 		public void run() {
-			for (int i = 0; i < indexes.length; i++) {
-				if (indexes[i] != null)
-					computeNextState(indexes[i][0], indexes[i][1], indexes[i][2]);
+			while(iters-->0){
+				for (int i = 0; i < indexes.length; i++) {
+					if (indexes[i] != null)
+						computeNextState(indexes[i][0], indexes[i][1], indexes[i][2]);
+				}
+				coordinator.arriveAndAwaitAdvance();
+				coordinator.arriveAndAwaitAdvance();
 			}
 		}
-		
+
 	}
-	
+
 	public CellularAutomaton(boolean[][][] matrix) {
 		size = matrix.length;
 		initialStates = matrix;
@@ -47,7 +56,7 @@ public class CellularAutomaton {
 		}
 		newStates = new boolean[size][size][size];
 	}
-	
+
 	public void computeNextState(int x, int y, int z) {
 		int aliveNeighbors = 0;
 		for (int i = -1; i <= 1; i++) {
@@ -65,11 +74,12 @@ public class CellularAutomaton {
 		else
 			newStates[x][y][z] = n3 <= aliveNeighbors && aliveNeighbors < n4;
 	}
-	
+
 	public long runSimulation(int steps, int threads, int partitionType) throws InterruptedException {
 		oldStates = initialStates.clone();
 		ArrayList<Thread> threadList = new ArrayList<Thread>();
 		int[][][] partitions = new int[threads][(int) Math.ceil(Math.pow(size, 3) / threads)][];
+		Phaser phaser = new Phaser(1);
 		if (partitionType == QUOTIENT_PARTITION) {
 			for (int j = 0; j < threads; j++) {
 				int lowerBound, upperBound;
@@ -87,25 +97,30 @@ public class CellularAutomaton {
 						break;
 					partitions[j][i] = hash[i * j];
 				}
-					
+
 			}
 		}
+		for (int j = 0; j < threads; j++) {
+
+			Thread newThread;
+			newThread = new PartitionThread(partitions[j],phaser, steps);
+			threadList.add(newThread);
+		}
 		long startTime = System.currentTimeMillis();
+		for (int j = 0; j < threads; j++) {
+			threadList.get(j).start();
+		}
 		for (int step = 0; step < steps; step++) {
-			for (int j = 0; j < threads; j++) {
-				Thread newThread;
-				newThread = new PartitionThread(partitions[j]);
-				threadList.add(newThread);
-				newThread.start();
-			}
-			while (!threadList.isEmpty()) {
-				Thread thread = threadList.remove(0);
-				thread.join();
-			}
+			phaser.arriveAndAwaitAdvance();
 			oldStates = newStates.clone();
+			phaser.arriveAndAwaitAdvance();
+		}
+		while (!threadList.isEmpty()) {
+			Thread thread = threadList.remove(0);
+			thread.join();
 		}
 		long endTime = System.currentTimeMillis();
 		return endTime - startTime;
 	}
-	
+
 }
