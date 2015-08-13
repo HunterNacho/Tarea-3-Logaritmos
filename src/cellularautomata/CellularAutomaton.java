@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class CellularAutomaton {
+	public static int QUOTIENT_PARTITION = 1;
+	public static int MODULO_PARTITION = 2;
 	private boolean[][][] oldStates;
 	private boolean[][][] newStates;
 	private int[][] hash;
@@ -21,7 +23,8 @@ public class CellularAutomaton {
 		@Override
 		public void run() {
 			for (int i = 0; i < indexes.length; i++) {
-				computeNextState(hash[i][0], hash[i][1], hash[i][2]);
+				if (i < hash.length && hash[i] != null)
+					computeNextState(hash[i][0], hash[i][1], hash[i][2]);
 			}
 		}
 		
@@ -63,19 +66,38 @@ public class CellularAutomaton {
 			newStates[x][y][z] = n3 <= aliveNeighbors && aliveNeighbors < n4;
 	}
 	
-	public long runSimulation(int steps, int threads) throws InterruptedException {
+	public long runSimulation(int steps, int threads, int partitionType) throws InterruptedException {
 		ArrayList<Thread> threadList = new ArrayList<Thread>();
-		long startTime = System.currentTimeMillis();
-		for (int step = 0; step < steps; step++) {
+		int[][][] partitions = new int[threads][(int) Math.ceil(Math.pow(size, 3) / threads)][3];
+		if (partitionType == QUOTIENT_PARTITION) {
 			for (int j = 0; j < threads; j++) {
 				int lowerBound, upperBound;
 				lowerBound = j * size * size * size / threads;
 				upperBound = (j + 1) * size * size * size / threads;
-				Thread newThread = new PartitionThread(Arrays.copyOfRange(hash, lowerBound, upperBound - 1));
+				if (j == threads - 1)
+					upperBound = hash.length;
+				partitions[j] = Arrays.copyOfRange(hash, lowerBound, upperBound - 1);
+			}
+		}
+		else if (partitionType == MODULO_PARTITION) {
+			for (int i = 0; i * threads < hash.length; i++) {
+				for (int j = 0; j < threads; j++) {
+					if (i * j >= hash.length)
+						break;
+					partitions[j][i] = hash[i * j];
+				}
+					
+			}
+		}
+		long startTime = System.currentTimeMillis();
+		for (int step = 0; step < steps; step++) {
+			for (int j = 0; j < threads; j++) {
+				Thread newThread;
+				newThread = new PartitionThread(partitions[j]);
 				threadList.add(newThread);
 				newThread.run();
 			}
-			for (int j = 0; j < threads; j++) {
+			while (!threadList.isEmpty()) {
 				Thread thread = threadList.remove(0);
 				thread.join();
 			}
