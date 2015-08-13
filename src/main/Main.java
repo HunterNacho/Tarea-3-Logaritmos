@@ -44,6 +44,7 @@ public class Main {
 			CellularAutomaton cellAut = new CellularAutomaton(matrix);
 			
 			for(int k = 1; k <=5; k++) {
+				//VER SI HAY QUE RESETEAR LA MATRIZ A COMO ESTABA ANTES
 				long res = cellAut.runSimulation(STEPS, k);
 				System.out.print(","+res);
 			}
