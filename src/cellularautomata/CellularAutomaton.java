@@ -55,7 +55,7 @@ public class CellularAutomaton {
 				for (int k = -1; k <= 1; k++) {
 					if (i == j && j == k && k == 0)
 						continue;
-					if (oldStates[(x + i) % size][(y + j) % size][(z + k) % size])
+					if (oldStates[(x + i + size) % size][(y + j + size) % size][(z + k + size) % size])
 						aliveNeighbors++;
 				}
 			}
