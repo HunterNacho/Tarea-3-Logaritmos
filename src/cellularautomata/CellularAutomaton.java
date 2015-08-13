@@ -33,7 +33,6 @@ public class CellularAutomaton {
 						computeNextState(indexes[i][0], indexes[i][1], indexes[i][2]);
 				}
 				coordinator.arriveAndAwaitAdvance();
-				coordinator.arriveAndAwaitAdvance();
 			}
 		}
 
@@ -79,7 +78,15 @@ public class CellularAutomaton {
 		oldStates = initialStates.clone();
 		ArrayList<Thread> threadList = new ArrayList<Thread>();
 		int[][][] partitions = new int[threads][(int) Math.ceil(Math.pow(size, 3) / threads)][];
-		Phaser phaser = new Phaser(1);
+		Phaser phaser = new Phaser(0){
+			@Override
+			protected boolean onAdvance(int threads, int iter){
+				boolean[][][] aux = newStates;
+				newStates = oldStates;
+				oldStates = aux;
+				return false;
+			}
+		};
 		if (partitionType == QUOTIENT_PARTITION) {
 			for (int j = 0; j < threads; j++) {
 				int lowerBound, upperBound;
@@ -110,11 +117,7 @@ public class CellularAutomaton {
 		for (int j = 0; j < threads; j++) {
 			threadList.get(j).start();
 		}
-		for (int step = 0; step < steps; step++) {
-			phaser.arriveAndAwaitAdvance();
-			oldStates = newStates.clone();
-			phaser.arriveAndAwaitAdvance();
-		}
+
 		while (!threadList.isEmpty()) {
 			Thread thread = threadList.remove(0);
 			thread.join();

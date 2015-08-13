@@ -11,7 +11,7 @@ public class Main {
 	
 	//CSV header
 	private static final String NUMBER_OF_THREADS = "size,0,1,2,3,4,5";
-	private static final int STEPS = 100;
+	private static final int STEPS = 1000;
 	private static BufferedWriter quotResults;
 	private static BufferedWriter modResults;
 	
